@@ -1,45 +1,55 @@
-import importlib.util, os, sys, glob
-from sdk.decorators import NODE_REGISTRY
-from core.security import bandit_scan, pip_audit_scan
-
-def import_compiled_extension_if_exists(module_path, pkg_name):
-    for ext in ("*.so", "*.pyd"):
-        files = glob.glob(os.path.join(module_path, ext))
-        if files:
-            compiled_file = files[0]
-            spec = importlib.util.spec_from_file_location(f"{pkg_name}.image_filter", compiled_file)
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = mod
-            spec.loader.exec_module(mod)
-            print(f"[MODULE] Loaded compiled extension: {compiled_file}")
-            return True
-    return False
+# backend/core/module_loader.py
+import importlib.util
+import os
+import sys
+from .logger import log_info, log_error, log_module
+from .security import bandit_scan, pip_audit_scan
 
 def load_all_modules(modules_dir: str):
-    NODE_REGISTRY.clear()
+    """
+    Dynamically import all Python or Cython modules from the given directory.
+    Returns a list of module objects.
+    """
+    loaded_modules = []
 
-    for name in os.listdir(modules_dir):
-        module_path = os.path.join(modules_dir, name)
-        main_file = os.path.join(module_path, "main.py")
-        if not os.path.isdir(module_path):
-            continue
+    if not os.path.isdir(modules_dir):
+        log_error(f"Modules directory not found: {modules_dir}")
+        return []
 
-        bandit_scan(module_path)
-        pip_audit_scan(os.path.join(module_path, "requirements.txt"))
+    log_info(f"Scanning modules in {modules_dir}")
 
-        pkg_name = f"projects.demo_project.modules.{name}"
-        compiled_loaded = import_compiled_extension_if_exists(module_path, pkg_name)
-        if compiled_loaded:
-            continue
+    # Run placeholder security checks
+    bandit_scan(modules_dir)
+    pip_audit_scan(os.path.join(modules_dir, "requirements.txt"))
 
-        if os.path.isfile(main_file):
-            spec = importlib.util.spec_from_file_location(f"{name}.main", main_file)
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = mod
-            spec.loader.exec_module(mod)
-            print(f"[MODULE] Loaded (py): {name}")
-        else:
-            print(f"[MODULE] No main.py found for {name}, skipping.")
 
-    print(f"[INFO] Registered {len(NODE_REGISTRY)} nodes.")
-    return NODE_REGISTRY
+    for root, _, files in os.walk(modules_dir):
+        for filename in files:
+            if not (filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so")):
+                continue
+
+            mod_path = os.path.join(root, filename)
+
+            # 👇 Derive module name from folder if it's a "main.py"
+            folder_name = os.path.basename(root)
+            base_name = os.path.splitext(filename)[0]
+
+            if base_name == "main":
+                mod_name = folder_name
+            else:
+                mod_name = base_name
+
+            try:
+                spec = importlib.util.spec_from_file_location(mod_name, mod_path)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = module
+                    spec.loader.exec_module(module)
+                    loaded_modules.append(module)
+                    log_module(f"Loaded module: {mod_name}")
+            except Exception as e:
+                log_error(f"Failed to load {mod_name}: {e}")
+
+
+    log_info(f"Total modules loaded: {len(loaded_modules)}")
+    return loaded_modules

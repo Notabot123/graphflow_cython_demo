@@ -1,0 +1,31 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.env*/ 
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Cython build outputs
+cython_build/*.c
+cython_build/*.html
+cython_build/*.so
+
+# IDE and editor files
+.vscode/
+.idea/
+.DS_Store
+
+# Test cache
+.pytest_cache/
+.coverage

@@ -1,16 +1,16 @@
 # GraphFlow Cython Demo
 
-## 🧩 What is this?
+## What is this?
 A tiny prototype showing how your FastAPI + Cython + module loader workflow could work together.
 
 ---
 
-## 🚀 Setup (Explain Like I'm 5)
+## Setup
 1️⃣ Install Python 3.11+  
 2️⃣ Open a terminal and run:
 
 ```bash
-pip install cython setuptools wheel fastapi uvicorn pytest
+pip install cython setuptools wheel fastapi uvicorn pytest colorama httpx
 ```
 
 3️⃣ Build the Cython module:
@@ -24,8 +24,18 @@ python cython_build/setup_cython.py build_ext --inplace
 ```bash
 python backend/main.py
 ```
+or alternatively:
+```bash
+python -m  backend.main
+```
 
-Then open your browser to **http://127.0.0.1:8000/ui**
+Then open your browser to:
+
+**http://127.0.0.1:8000/ui**
+ → friendly HTML list
+
+**http://127.0.0.1:8000/api/nodes**
+ → JSON of all loaded nodes
 
 5️⃣ Run tests:
 
@@ -57,7 +67,16 @@ Keep user-created modules in **plain Python** for security scanning and communit
 ```
 graphflow_cython_demo/
 ├── backend/
-│   └── core/
+│   ├── core/
+│   │   ├── module_loader.py
+│   │   ├── project_manager.py
+│   │   └── security.py      ← new
+│   └── main.py
+├── sdk/
+│   ├── __init__.py
+│   └── decorators.py
+...
+
 ├── projects/demo_project/modules/image_filter/
 ├── cython_build/
 └── tests/
@@ -65,4 +84,4 @@ graphflow_cython_demo/
 
 ---
 
-Have fun hacking 🚀
+

@@ -10,7 +10,14 @@ A tiny prototype showing how your FastAPI + Cython + module loader workflow coul
 2️⃣ Open a terminal and run:
 
 ```bash
-pip install cython setuptools wheel fastapi uvicorn pytest colorama httpx
+pip install cython setuptools wheel fastapi uvicorn pytest colorama httpx bandit pip-audit
+
+```
+for hot reload, using reloader.py
+
+```bash
+pip install watchdog
+
 ```
 
 3️⃣ Build the Cython module:
@@ -44,25 +51,63 @@ pytest -v
 ```
 
 ---
+## Hot-reloading
 
-### 💡 Notes
+Any changes to .py or .pyx files inside your modules folder are detected automatically.
+
+NODE_REGISTRY is cleared and modules reloaded.
+
+Logs in console show what was loaded.
+
+## Adding a custom module
+
+Create a folder inside projects/demo_project/modules/, e.g.:
+
+projects/demo_project/modules/my_node/
+
+
+Add your .py or .pyx file inside, e.g., main.py:
+```python
+from sdk.decorators import graph_node
+
+@graph_node(
+    name="Hello Node",
+    category="Example",
+    icon="👋",
+    ui={"inputs": ["name"], "outputs": ["greeting"], "html": "<input name='name'>"}
+)
+def hello(name):
+    return f"Hello, {name}!"
+```
+
+Optional: add requirements.txt if your module needs external libraries:
+
+```bash
+numpy>=1.25.0
+```
+
+Save the file — Watchdog will reload automatically. Check /ui and /api/nodes
+
+
+### Notes
 - `image_filter.pyx` → compiled Cython version of the module  
 - `main.py` → fallback pure Python version  
 - `module_loader.py` → loads compiled `.so/.pyd` first, falls back to `.py`  
 - `project_manager.py` → handles per-project virtual environments (placeholder)  
-- Future: Add Bandit & pip-audit scanning during module upload
+- Bandit & pip-audit scanning during module upload
+- Hot-reload is intended for development; in production you may disable it.
 
 ---
 
-## 🔒 Why Cython?
-- Makes your core logic harder to reverse engineer
+## Why Cython?
+- Makes core logic harder to reverse engineer
 - Optionally speeds up CPU-heavy work
 
 Keep user-created modules in **plain Python** for security scanning and community contribution.
 
 ---
 
-## 🧱 Folder Structure
+## Folder Structure
 
 ```
 graphflow_cython_demo/
